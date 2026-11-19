@@ -1,0 +1,265 @@
+{
+  "info": {
+    "name": "Couchy API",
+    "description": "Run Auth > Register (or Login) first. The token is saved to the active environment automatically and every other request sends it as a Bearer token.\n\nPick the 'Couchy - local (dotnet run)' or 'Couchy - docker compose' environment before sending requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "username", "value": "testuser" },
+    { "key": "email", "value": "testuser@example.com" },
+    { "key": "password", "value": "Test12345!" },
+    { "key": "profileId", "value": "1" },
+    { "key": "hostProfileId", "value": "1" },
+    { "key": "requestId", "value": "1" },
+    { "key": "userId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 2xx', () => pm.response.to.be.success);",
+                  "const body = pm.response.json();",
+                  "if (body.token) { pm.environment.set('token', body.token); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "if (body.token) { pm.environment.set('token', body.token); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profiles",
+      "item": [
+        {
+          "name": "Create my profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.profileId) { pm.collectionVariables.set('profileId', body.profileId); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"about\": \"Hello!\",\n  \"gender\": \"\",\n  \"pronouns\": \"\",\n  \"languages\": \"Turkish, English\",\n  \"hostingStatus\": \"MAY_HOST\",\n  \"meetingStatus\": \"CAN_MEET\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/profiles/me/create"
+          }
+        },
+        {
+          "name": "My profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.profileId) { pm.collectionVariables.set('profileId', body.profileId); }"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/profiles/me" }
+        },
+        {
+          "name": "Search profiles",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/profiles/search",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "profiles", "search"],
+              "query": [
+                { "key": "city", "value": "", "disabled": true },
+                { "key": "hostingStatus", "value": "CAN_HOST", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Profile by id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/profiles/{{profileId}}" }
+        },
+        {
+          "name": "Edit about",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"about\": \"Updated about text\",\n  \"languages\": \"Turkish, English, German\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/profiles/edit/about"
+          }
+        },
+        {
+          "name": "Edit home",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location\": {\n    \"city\": \"Istanbul\",\n    \"country\": \"Turkey\",\n    \"latitude\": 41.0082,\n    \"longitude\": 28.9784\n  },\n  \"homeDetails\": {\n    \"maxGuests\": 2,\n    \"hasWifi\": true,\n    \"hasKitchen\": true,\n    \"petsAllowed\": false,\n    \"smokingAllowed\": false,\n    \"sleepingArrangement\": \"Sofa bed\",\n    \"houseRules\": \"No parties\"\n  },\n  \"hostingStatus\": \"CAN_HOST\",\n  \"meetingStatus\": \"CAN_MEET\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/profiles/edit/home"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stay requests",
+      "item": [
+        {
+          "name": "Send stay request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.id) { pm.collectionVariables.set('requestId', body.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hostProfileId\": {{hostProfileId}},\n  \"initialMessage\": \"Hi! Could I stay for two nights?\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/messages"
+          }
+        },
+        {
+          "name": "Requests I sent (surfing)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/messages/surfing" }
+        },
+        {
+          "name": "Requests I received (hosting)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/messages/hosting" }
+        },
+        {
+          "name": "Accept request",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/messages/{{requestId}}/accept" }
+        },
+        {
+          "name": "Reject request",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/messages/{{requestId}}/reject" }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List users",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/users" }
+        },
+        {
+          "name": "Add user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.userId) { pm.collectionVariables.set('userId', body.userId); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"another-user\",\n  \"email\": \"another@example.com\",\n  \"password\": \"Test12345!\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/users"
+          }
+        },
+        {
+          "name": "Update user",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}?email=changed@example.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}"],
+              "query": [
+                { "key": "username", "value": "", "disabled": true },
+                { "key": "email", "value": "changed@example.com" },
+                { "key": "password", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete user (soft)",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/users/{{userId}}" }
+        }
+      ]
+    }
+  ]
+}
